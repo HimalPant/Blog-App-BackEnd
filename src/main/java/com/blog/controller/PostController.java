@@ -2,6 +2,7 @@ package com.blog.controller;
 
 import com.blog.payloads.APIResponse;
 import com.blog.payloads.PostDTO;
+import com.blog.payloads.PostResponse;
 import com.blog.services.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -42,18 +43,23 @@ public class PostController {
 
     // get all posts
     @GetMapping("/posts")
-    public ResponseEntity<List<PostDTO>> getAllPosts(
-            @RequestParam(value = "pageNo",defaultValue = "1",required = false) Integer pageNo,
-            @RequestParam(value = "pageSize",defaultValue = "2",required = false) Integer pageSize
+    public ResponseEntity<PostResponse> getAllPosts(
+            @RequestParam(value = "pageNo",defaultValue = "0",required = false) Integer pageNo,
+            @RequestParam(value = "pageSize",defaultValue = "5",required = false) Integer pageSize,
+            @RequestParam(value = "sortBy",defaultValue = "postId", required = false) String sortBy,
+            @RequestParam(value = "sortDir",defaultValue = "asc",required = false)String sortDir
     ){
-        List<PostDTO> allPost = postService.getAllPost(pageNo,pageSize);
+        PostResponse allPost = postService.getAllPost(pageNo, pageSize,sortBy,sortDir);
         return new ResponseEntity<>(allPost, HttpStatus.OK);
     }
 
     // get posts by userId
-    @GetMapping("/user/{userId}/posts")
-    public ResponseEntity<List<PostDTO>> getPostByUserId(@PathVariable Integer userId){
-        List<PostDTO> allPostByUser = this.postService.getAllPostByUser(userId);
+    @GetMapping("/user/{userId}/posts")  // userId refers to one user ले कतिओटा post गरेको छ त्यो सबै देखाऊने हो..
+    public ResponseEntity<List<PostDTO>> getPostByUserId(
+            @PathVariable Integer userId,
+            @RequestParam(value = "pageNo",defaultValue = "0",required = false) Integer pageNo,
+            @RequestParam(value = "pageSize",defaultValue = "5",required = false) Integer pageSize){
+        List<PostDTO> allPostByUser = this.postService.getAllPostByUser(userId, pageNo,pageSize);
         return new ResponseEntity<>(allPostByUser,HttpStatus.OK);
     }
 

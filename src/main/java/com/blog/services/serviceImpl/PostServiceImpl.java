@@ -5,6 +5,7 @@ import com.blog.model.Category;
 import com.blog.model.Post;
 import com.blog.model.User;
 import com.blog.payloads.PostDTO;
+import com.blog.payloads.PostResponse;
 import com.blog.repositories.CategoryRepository;
 import com.blog.repositories.PostRepository;
 import com.blog.repositories.UserRepository;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -72,21 +74,36 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostDTO> getAllPost(Integer pageNo, Integer pageSize) {
-        Pageable p = PageRequest.of(pageNo,pageSize);
-        Page<Post> postPage = postRepository.findAll(p);
+    public PostResponse getAllPost(Integer pageNo, Integer pageSize,String sortBy,String sortDir) {
+        Sort sort =(sortDir.equalsIgnoreCase("asc"))?Sort.by(sortBy).ascending():Sort.by(sortBy).descending();
+        /*if(sortDir.equalsIgnoreCase("asc")){
+            sort = Sort.by(sortBy).ascending();
+        }else{
+            sort = Sort.by(sortBy).descending();
+        }*/
+        Pageable p = PageRequest.of(pageNo,pageSize, sort);
+        Page<Post> postPage = postRepository.findAll(p); // It will return post of only one page.
         List<Post> postList = postPage.getContent();
-
         List<PostDTO> postDTOList = postList.stream().
                 map((post) -> this.modelMapper.map(post, PostDTO.class)).collect(Collectors.toList());
-        return postDTOList;
+        PostResponse postResponse = new PostResponse();
+        postResponse.setPageNo(postPage.getNumber());
+        postResponse.setTotalPages(postPage.getTotalPages());
+        postResponse.setTotalElements(postPage.getNumberOfElements());
+        postResponse.setContent(postDTOList);
+        postResponse.setPageSize(postPage.getSize());
+        postResponse.setLastPage(postPage.isLast());
+        return postResponse;
     }
 
     @Override
-    public List<PostDTO> getAllPostByUser(Integer userId) {
+    public List<PostDTO> getAllPostByUser(Integer userId, Integer pageNo, Integer pageSize) {
+        Pageable p = PageRequest.of(pageNo,pageSize);
         User user = this.userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "UserId", userId));
-        List<Post> posts = this.postRepository.findByUser(user);
+        Page<Post> postPage = postRepository.findAll(p);
+        List<Post> posts = postPage.getContent();
+        // List<Post> posts = this.postRepository.findByUser(user);
         List<PostDTO> postDTOS = posts.stream()
                 .map((post) -> this.modelMapper.map(post, PostDTO.class)).collect(Collectors.toList());
         return postDTOS;
